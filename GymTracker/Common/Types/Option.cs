@@ -20,6 +20,13 @@ namespace GymTracker.Common.Types
             _ => whenNone
         };
 
+        /// <summary>
+        /// Return the value in the Option, if it's Some then return the value otherwise apply the none funciton
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="option"></param>
+        /// <param name="whenNone"></param>
+        /// <returns></returns>
         public static T Reduce<T>(this Option<T> option, Func<T> whenNone) =>
         option switch
         {

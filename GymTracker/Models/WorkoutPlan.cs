@@ -1,0 +1,1 @@
+public record WorkoutPlan(Dictionary<string, Dictionary<string, List<Exercise>>> Value);

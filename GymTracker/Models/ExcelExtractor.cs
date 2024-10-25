@@ -1,3 +1,4 @@
+using System.Net;
 using GymTracker.Common.Types;
 using OfficeOpenXml;
 
@@ -5,11 +6,35 @@ namespace GymTracker.Models
 {
     public class ExcelExtractor
     {
-        public static Dictionary<string, int> ExtractORM()
+        private static bool FileHasRightFormat(string filePath)
         {
-            string filePath = @"D:\GymProgressTracker\GymTrackerTDD\test.xlsx";
-            if (string.IsNullOrEmpty(filePath))
-                throw new Exception("File path is invalid");
+            FileInfo fileInfo = new(filePath);
+            using (ExcelPackage package = new (fileInfo))
+            {
+                ExcelWorksheet sheet = package.Workbook.Worksheets["4x"];
+                try
+                {
+                   return sheet.Cells[1, 2].Text.Equals("JEFF NIPPARD'S FULL BODY - 4X/WEEK SPREADSHEET", StringComparison.OrdinalIgnoreCase) &&
+                    sheet.Cells[152, 2].Text.Equals("Week 5 (Block 2)", StringComparison.OrdinalIgnoreCase) &&
+                    sheet.Cells[31, 4].Text.Equals("HAMMER CURL", StringComparison.OrdinalIgnoreCase);
+
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+
+        }
+        private static bool IsFileValid(string filePath) =>
+            !string.IsNullOrWhiteSpace(filePath) && FileHasRightFormat(filePath);
+      
+        public static Dictionary<string, int> ExtractORM(string filePath)
+        {
+            if(!IsFileValid(filePath))
+            {
+                throw new Exception("Excel file doesn't have the right format, please upload 4X/WEEK Jeff Nippard full body!");
+            }
 
             var ORMs = new Dictionary<string, int>();
             FileInfo existingFile = new(filePath);
@@ -25,11 +50,12 @@ namespace GymTracker.Models
             return ORMs;
         }
 
-        public static (string, string) ExtractTimespan()
+        public static (string, string) ExtractTimespan(string filePath)
         {
-            string filePath = @"D:\GymProgressTracker\GymTrackerTDD\test.xlsx";
-            if (string.IsNullOrEmpty(filePath))
-                throw new Exception("File path is invalid");
+            if(!IsFileValid(filePath))
+            {
+                throw new Exception("Excel file doesn't have the right format, please upload 4X/WEEK Jeff Nippard full body!");
+            }
 
             string startDate = "N/A";
             string endDate = "N/A";
@@ -52,9 +78,14 @@ namespace GymTracker.Models
             return (startDate, endDate);
         }
 
-        public static Option<List<Exercise>> GetExercises()
+        public static Option<List<Exercise>> GetExercises(string filePath)
         {
-            FileInfo f = new(@"D:\GymProgressTracker\GymTrackerTDD\test.xlsx");
+            if(!IsFileValid(filePath))
+            {
+                throw new Exception("Excel file doesn't have the right format, please upload 4X/WEEK Jeff Nippard full body!");
+            }
+            
+            FileInfo f = new(filePath);
             using (ExcelPackage p = new(f))
             {                
                 ExcelWorksheet sheet = p.Workbook.Worksheets["4X"]; 
@@ -106,6 +137,11 @@ namespace GymTracker.Models
             }
         
         }
+    
+        public static Option<WorkoutPlan> GetWorkoutPlan(string filePath)
+        {
+            return new None<WorkoutPlan>();
+        }
     }
     
     public static class ExcelRangeBaseExtensionAndHelpers
@@ -150,7 +186,7 @@ namespace GymTracker.Models
         
         public static List<string> RemoveInvalidCells(this List<string> rawWorkoutPlan) 
         {
-            for(int i = 0; i < rawWorkoutPlan.Count(); i++)
+            for(int i = 0; i < rawWorkoutPlan.Count; i++)
             {
                 if(rawWorkoutPlan[i].Equals("N/A") && rawWorkoutPlan[i + 1].Equals("N/A"))
                 {
